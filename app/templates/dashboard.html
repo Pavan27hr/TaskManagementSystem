@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Load Bootstrap and Font Awesome -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<style>
+    /* Custom CSS */
+    body {
+        background-color: #f8f9fa;
+        color: #333;
+    }
+    .navbar {
+        background-color: #007bff;
+    }
+    .navbar-brand, .nav-link {
+        color: white;
+    }
+    .card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .task-status.completed {
+        color: green;
+        font-weight: bold;
+    }
+    .task-status.pending {
+        color: orange;
+        font-weight: bold;
+    }
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    .task-actions {
+        text-align: center;
+    }
+</style>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-tasks"></i> Task Manager
+        </a>
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Filters -->
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <form method="GET" action="{{ url_for('dashboard') }}">
+                <label for="filter_status" class="form-label">Filter by Status:</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Completed" {% if status == 'Completed' %}selected{% endif %}>Completed</option>
+                </select>
+            </form>
+        </div>
+        <div class="col-md-4">
+            <form method="GET" action="{{ url_for('dashboard') }}">
+                <label for="filter_date" class="form-label">Filter by Date:</label>
+                <input type="date" name="date" class="form-control" value="{{ date }}" onchange="this.form.submit()" />
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Task Table -->
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between">
+            <h4><i class="fas fa-tasks"></i> Your Tasks</h4>
+            <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="fas fa-plus-circle"></i> Add Task
+            </button>
+        </div>
+        <div class="card-body">
+            {% if tasks %}
+            <table class="table table-hover text-center">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.category }}</td>
+                        <td>
+                            {% if task.status == 'Completed' %}
+                            <span class="task-status completed">Completed</span>
+                            {% else %}
+                            <span class="task-status pending">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ task.date }}</td>
+                        <td class="task-actions">
+                            <div class="btn-group">
+                                <!-- Edit Button with Text -->
+                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editTaskModal{{ task.id }}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <!-- Delete Button with Text -->
+                                <a href="{{ url_for('delete_task', task_id=task.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this task?');">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Task Modal -->
+                    <div class="modal fade" id="editTaskModal{{ task.id }}" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form action="{{ url_for('edit_task', task_id=task.id) }}" method="POST">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editTaskModalLabel">Edit Task</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label>Title</label>
+                                            <input type="text" name="title" class="form-control" value="{{ task.title }}" required />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label>Category</label>
+                                            <input type="text" name="category" class="form-control" value="{{ task.category }}" required />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label>Status</label>
+                                            <select name="status" class="form-select">
+                                                <option value="Pending" {% if task.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                <option value="Completed" {% if task.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-success">Update Task</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No tasks found. Add a new task!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('add_task') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Title</label>
+                        <input type="text" name="title" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Category</label>
+                        <input type="text" name="category" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Pending">Pending</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Add Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+{% if success_message %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        alert("{{ success_message }}");
+    });
+</script>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
